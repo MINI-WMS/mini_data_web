@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>采购</title>
+	<#include "/header.html">
+
+	<!--<link href="https://cdn.bootcss.com/select2/4.0.6-rc.1/css/select2.min.css" rel="stylesheet">-->
+	<!--&lt;!&ndash;<script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/i18n/zh-CN.js"></script>&ndash;&gt;-->
+	<!--<script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/select2.full.min.js"></script>-->
+	<!--<script src="https://cdn.bootcss.com/select2/4.0.6-rc.1/js/select2.min.js"></script>-->
+	<script src="${request.contextPath}/statics/libs/ajaxupload.js"></script>
+
+</head>
+<body>
+<div id="familyApp" v-cloak>
+	<div v-show="showList">
+
+
+		<!--<div id="myModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">-->
+			<!--<div class="modal-dialog modal-lg" role="document">	<div class="modal-content">-->
+
+			<!--</div>-->
+			<!--</div>-->
+		<!--</div>-->
+
+
+		<!--<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">-->
+			<!--<div class="modal-dialog">-->
+				<!--<div class="modal-content">-->
+				<!--</div>-->
+			<!--</div>-->
+		<!--</div>-->
+
+
+		<div class="grid-btn">
+			<div class="form-group col-md-12">
+
+
+				<div class="form-group col-sm-2">
+					<input type="text" class="form-control" v-model="q.orderno" @keyup.enter="seq.focus()" placeholder="订单号"
+					       id="orderno">
+				</div>
+				<div class="form-group col-sm-2">
+					<input type="text" class="form-control" v-model="q.seq" @keyup.enter="query" placeholder="提货单号" id="seq">
+				</div>
+				<div class="form-group col-sm-2">
+					<input type="text" class="form-control" v-model="q.station" @keyup.enter="query" placeholder="港口"
+					       id="station">
+				</div>
+				<div class="form-group col-sm-2">
+					<input type="text" class="form-control" v-model="q.itemname" @keyup.enter="query" placeholder="产品名称"
+					       id="itemname">
+				</div>
+				<div class="form-group col-sm-2">
+					<input type="text" class="form-control" v-model="q.contractdateStart" @keyup.enter="contractdateEnd.focus()"
+					       placeholder="起始日期" id="contractdateStart">
+				</div>
+				<div class="form-group col-sm-2">
+					<input type="text" class="form-control" v-model="q.contractdateEnd" @keyup.enter="orderno.focus()"
+					       placeholder="截止日期" id="contractdateEnd">
+				</div>
+				<div class="form-group col-sm-2">
+					<!--<select class="form-group" style="width: 100%; height: 100%;">-->
+					<select id="orerstatus" title="状态" v-model="q.orerstatus" placeholder="状态"
+					        class="selectpicker show-tick form-control">
+						<option value="">状态 请选择...</option>
+						<option value="发货">发货</option>
+						<option value="到港">到港</option>
+						<option value="商检">商检</option>
+						<option value="清关">清关</option>
+						<option value="入库">入库</option>
+						<!--<optgroup label="状态">-->
+						<!--<option value="">全部</option>-->
+						<!--<option value="1">正常</option>-->
+						<!--<option value="0">禁用</option>-->
+						<!--</optgroup>-->
+					</select>
+				</div>
+				<div class="form-group col-sm-2">
+					<a class="btn btn-default" @click="query">
+						<i class="fa fa-search" aria-hidden="true"></i>&nbsp;查询
+					</a>
+				</div>
+				<!--<div class="form-group col-md-5">-->
+				<!--&lt;!&ndash;<div class="col-md-1 control-label">订货日期</div>&ndash;&gt;-->
+				<!--<div class="col-md-6">-->
+				<!--<input type="text"  class="form-control" v-model="q.contractdateStart" @keyup.enter="contractdateEnd.focus()" placeholder="起始日期" id="contractdateStart">-->
+				<!--</div>-->
+				<!--<div class="col-md-6">-->
+				<!--<input type="text" class="form-control" v-model="q.contractdateEnd" @keyup.enter="orderno.focus()" placeholder="截止日期" id="contractdateEnd">-->
+				<!--</div>-->
+				<!--</div>-->
+			</div>
+			<!--<div class="form-group col-md-12">-->
+
+			<#if shiro.hasPermission("purincept:save")>
+			<a class="btn btn-primary" @click="add"><i class="fa fa-plus"></i>&nbsp;新增</a>
+			<a class="btn btn-primary" id="uploadFile"><i class="fa fa-file-excel-o" aria-hidden="true"></i>&nbsp;导入EXCEL</a>
+			<a class="btn btn-primary" id="downloadTemplate" @click="downloadTemplate"><i class="fa fa-download"
+			                                                                              aria-hidden="true"></i>&nbsp;下载EXCEL模板</a>
+			<a class="btn btn-primary" @click="genContractFile"><i class="fa fa-file-excel-o" aria-hidden="true"></i>&nbsp;生成采购合同</a>
+
+		</#if>
+		<#if shiro.hasPermission("purincept:update")>
+		<a class="btn btn-warning" @click="update"><i class="fa fa-pencil-square-o"></i>&nbsp;修改</a>
+	</#if>
+	<#if shiro.hasPermission("purincept:delete")>
+	<a class="btn btn-danger" @click="del"><i class="fa fa-trash-o"></i>&nbsp;删除</a>
+</#if>
+
+
+<!--<a class="btn btn-warning" @click="editCell"><i class="fa fa-pencil-square-o"></i>&nbsp;批量编辑</a>-->
+<!--<a class="btn btn-warning" @click="editCellCancel"><i class="fa fa-pencil-square-o"></i>&nbsp;取消批量编辑</a>-->
+<!--</div>-->
+</div>
+<table id="jqGrid"></table>
+<div id="jqGridPager"></div>
+</div>
+
+<div v-show="!showList" class="panel panel-default">
+	<div class="panel-heading">{{title}}</div>
+	<form>
+		<div class="row">
+			<div class="col-md-6">
+				<div class="form-horizontal">
+
+					<div class="form-group">
+						<div class="col-sm-2 control-label">订货日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.contractdate" placeholder="订货日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">合同号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.contractno" placeholder="合同号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">英文品名</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.itemcode" placeholder="英文品名"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">产品名称</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.itemname" placeholder="产品名称"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">订单号码（PO）</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.orderno" placeholder="订单号码（PO）"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">序号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.orderseq" placeholder="序号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">供应商-卖方</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.supplier" placeholder="供应商-卖方"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">付款方式</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.paymentmethod" placeholder="付款方式"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">毛重</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.grossweight" placeholder="毛重"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">产地</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.productarea" placeholder="产地"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">厂号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.suppliercode" placeholder="厂号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">厂名</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.suppliername" placeholder="厂名"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">交货港口</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.station" placeholder="交货港口"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">箱号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.containerno" placeholder="箱号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">提单号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.seq" placeholder="提单号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">铅封号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.sealno" placeholder="铅封号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">单据件数</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.orderqty" placeholder="单据件数"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">净重（kg）</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.netweight" placeholder="净重（kg）"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">币种</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.currency" placeholder="币种"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">采购单价</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.orderprice" placeholder="采购单价"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">发票金额</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.billvalue" placeholder="发票金额"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">发船日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.departuredate" placeholder="发船日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">预计靠港日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.willarrivedate" placeholder="预计靠港日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">收货人</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.receiver" placeholder="收货人"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">采购</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.purchase" placeholder="采购"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">检疫证核销时间</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.quarantinedate" placeholder="检疫证核销时间"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">自动证审批时间</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.autocertificatedate" placeholder="自动证审批时间"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">自动证号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.autocertificateno" placeholder="自动证号"/>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-md-6">
+				<div class="form-horizontal">
+
+					<div class="form-group">
+						<div class="col-sm-2 control-label">卫生证书</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.healthcertificate" placeholder="卫生证书"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">生产日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.productdate" placeholder="生产日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">具体生产日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.productdatedetail" placeholder="具体生产日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">单据状态</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.orerstatus" placeholder="单据状态"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">代理</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.agent" placeholder="代理"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">是否索要港口报关费用发票</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.isaskforbill" placeholder="是否索要港口报关费用发票"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">海关放行时间</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.releasedate" placeholder="海关放行时间"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">备注</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.remark" placeholder="备注"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">船公司</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.shipcompany" placeholder="船公司"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">船名</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.shipname" placeholder="船名"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">船次</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.shipno" placeholder="船次"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">海运时间(天)</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.seadate" placeholder="海运时间(天)"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">尾款支付日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.finalmoneydate" placeholder="尾款支付日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">尾款金额</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.finalmoneyvalue" placeholder="尾款金额"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">尾款付款汇率</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.finalmoneyrate" placeholder="尾款付款汇率"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">定金支付日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.frontmoneydate" placeholder="定金支付日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">定金金额</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.frontmoneyvalue" placeholder="定金金额"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">定金付款汇率</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.frontmoneyrate" placeholder="定金付款汇率"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">付汇银行</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.bank" placeholder="付汇银行"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">收款人</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.receivablesuser" placeholder="收款人"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">付汇日期</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.paymentdate" placeholder="付汇日期"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">付汇汇率</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.paymentrate" placeholder="付汇汇率"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">是否已计算货值清算</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.iscalculation" placeholder="是否已计算货值清算"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">是否已付代理费</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.ispayagent" placeholder="是否已付代理费"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">申报价格</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.declareprice" placeholder="申报价格"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">报检号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.inspectionno" placeholder="报检号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">报关单号</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.declareno" placeholder="报关单号"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">大宗号码</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.bigno" placeholder="大宗号码"/>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-2 control-label">自动证申请号码</div>
+						<div class="col-sm-10">
+							<input type="text" class="form-control" v-model="purIncept.autocertificateapplyno" placeholder="自动证申请号码"/>
+						</div>
+					</div>
+
+					<div class="form-group">
+						<div class="col-sm-2 control-label"></div>
+						<a class="btn btn-warning" @click="saveOrUpdate"><i class="fa fa-floppy-o"
+						                                                    aria-hidden="true"></i>&nbsp;确定</a>
+						&nbsp;&nbsp;
+						<a class="btn btn-info" @click="reload"><i class="fa fa-backward" aria-hidden="true"></i>&nbsp;返回</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+</div>
+
+<script src="https://cdn.bootcss.com/clipboard.js/2.0.0/clipboard.min.js"></script>
+<script src="${request.contextPath}/statics/js/modules/incept/purincept.js?_${.now?long}"></script>
+</body>
+</html>

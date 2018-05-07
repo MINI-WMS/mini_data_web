@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ltsznh.modules.sys.dao.SysConfigDao">
+    <select id="queryObject" resultType="com.ltsznh.modules.sys.entity.SysConfigEntity">
+		select * from sys_config where config_id = #{configId}
+	</select>
+
+    <select id="queryList" parameterType="map" resultType="com.ltsznh.modules.sys.entity.SysConfigEntity">
+        select a.*
+        ,(SELECT username FROM sys_user where a.creator_id = user_id) as creator_name
+        ,(SELECT username FROM sys_user where a.modifier_id = user_id) as modifier_name
+        from sys_config as a
+        <where>
+            <if test="isEnabled != null and isEnabled.trim() != ''">
+                and is_enabled = #{isEnabled}
+            </if>
+            <if test="configKey != null and configKey.trim() != ''">
+                and config_key like concat('%',#{configKey},'%')
+            </if>
+        </where>
+        order by config_key
+        <if test="offset != null and limit != null">
+            limit #{offset}, #{limit}
+        </if>
+    </select>
+
+    <select id="queryTotal" parameterType="map" resultType="int">
+        select count(*) from sys_config
+        <where>
+            <if test="isEnabled != null and isEnabled.trim() != ''">
+                and is_enabled = #{isEnabled}
+            </if>
+            <if test="configKey != null and configKey.trim() != ''">
+                and config_key like concat('%',#{configKey},'%')
+            </if>
+        </where>
+    </select>
+
+    <insert id="save" parameterType="com.ltsznh.modules.sys.entity.SysConfigEntity">
+		insert into sys_config(config_key, config_value, remark,creator_id)
+			values(#{configKey},#{configValue},#{remark},#{creatorId})
+	</insert>
+
+    <update id="update" parameterType="com.ltsznh.modules.sys.entity.SysConfigEntity">
+        update sys_config
+        <set>
+            <if test="configKey != null">config_key = #{configKey},</if>
+            <if test="configValue != null">config_value = #{configValue},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="isEnabled != null">is_enabled = #{isEnabled},</if>
+            <if test="modifyDate != null">modify_date = #{modifyDate},</if>
+            <if test="modifierId != null">modifier_id = #{modifierId},</if>
+        </set>
+        where config_id = #{configId}
+    </update>
+
+    <!-- 根据key，更新value -->
+    <update id="updateValueByKey" parameterType="map">
+		update sys_config set config_value = #{configValue} where config_key = #{configKey}
+	</update>
+
+    <!-- 根据key，查询value -->
+    <select id="queryByKey" parameterType="string" resultType="com.ltsznh.modules.sys.entity.SysConfigEntity">
+		select * from sys_config where config_key = #{configKey}
+	</select>
+
+    <delete id="deleteBatch" parameterType="int">
+        update sys_config set is_enabled = 0,modify_date = current_timestamp(),modifier_id = #{modifierId}
+        where config_id in
+        <foreach item="configId" collection="array" open="(" separator="," close=")">
+            #{configId}
+        </foreach>
+    </delete>
+
+
+</mapper>
